@@ -8,6 +8,20 @@ The motivation: self-checkout fraud (skipping items, mis-scanning expensive prod
 2. **Unsupervised anomaly detection** (Isolation Forest, One-Class SVM) which is the realistic operating mode in stores where labels don't exist.
 3. **Customer-behaviour clustering** on real per-transaction supermarket data, plus a pilot study with hand-labelled fraud cases to train a logistic regression fraud classifier.
 
+## Why supervised learning is the right approach (per store)
+
+A central finding of the pilots was that self-checkout fraud is **not generalisable across stores**. The customer base of a supermarket depends heavily on its location — a branch in a student area behaves very differently from a branch in a family-suburb, a city-centre commuter location, or a tourist district. Each customer base has its own:
+
+- typical basket compositions (e.g. students buy mostly alcohol, snacks, ready meals; family branches buy bulk fresh produce + dairy; tourist-area branches skew towards small high-margin items),
+- typical scan times and basket sizes,
+- and consequently, its own fraud patterns — *which* items get mis-scanned or skipped depends on what's commonly in baskets in the first place.
+
+This means an unsupervised "anomaly" model trained on one store will mark the *normal* shopping behaviour of customers at another store as fraudulent, and miss that store's actual fraud (which by definition isn't anomalous *there*). A single global fraud-detection model is therefore not a viable approach.
+
+The conclusion is that **each store needs its own supervised fraud-detection model**, trained on its own labelled fraud cases against its own customer base. Supervised learning works precisely because the labels encode the store-specific definition of "fraudulent vs normal" — one that no globally-trained anomaly detector can recover. The unsupervised experiments in this repo (`main1.py`, `main2.py`, `main3.py`) exist primarily to demonstrate this gap: anomaly detectors flag novelty, not fraud, and at the per-store level the two diverge sharply.
+
+The pilot logistic regression (`R_scripts/predict 1.Rmd`) is the prototype of this per-store supervised pipeline.
+
 ## Repository structure
 
 ```
