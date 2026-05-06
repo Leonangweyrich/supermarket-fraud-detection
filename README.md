@@ -10,11 +10,11 @@ The motivation: self-checkout fraud (skipping items, mis-scanning expensive prod
 
 ## Why supervised learning is the right approach (per store)
 
-A central finding of the pilots was that self-checkout fraud is **not generalisable across stores**. The customer base of a supermarket depends heavily on its location — a branch in a student area behaves very differently from a branch in a family-suburb, a city-centre commuter location, or a tourist district. Each customer base has its own:
+A central finding of the pilots was that self-checkout fraud is **not generalisable across stores**. The customer base of a supermarket depends heavily on its location. A branch in a student area behaves very differently from a branch in a family suburb, a city centre commuter location, or a tourist district. Each customer base has its own:
 
 - typical basket compositions (e.g. students buy mostly alcohol, snacks, ready meals; family branches buy bulk fresh produce + dairy; tourist-area branches skew towards small high-margin items),
 - typical scan times and basket sizes,
-- and consequently, its own fraud patterns — *which* items get mis-scanned or skipped depends on what's commonly in baskets in the first place.
+- and consequently, its own fraud patterns  *which* items get misscanned or skipped depends on what's commonly in baskets in the first place.
 
 This means an unsupervised "anomaly" model trained on one store will mark the *normal* shopping behaviour of customers at another store as fraudulent, and miss that store's actual fraud (which by definition isn't anomalous *there*). A single global fraud-detection model is therefore not a viable approach.
 
