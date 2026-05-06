@@ -1,0 +1,10 @@
+.DS_Store
+__pycache__/
+*.pyc
+.idea/
+.vscode/
+.Rhistory
+.Rproj.user/
+*.Rproj
+
+data/creditcard.csv

@@ -1,0 +1,347 @@
+---
+title: "Pilot1_working"
+author: "Jared le Roux"
+date: "4/20/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library("splitstackshape")
+library(readxl)
+
+library(tidyverse)  
+library(cluster)    
+library(factoextra)
+library(ggplot2)
+
+```
+Load data, organise data, add variables 
+```{r}
+
+supermarket <- read_excel("~/Downloads/supermarket_3.xlsx", col_names = FALSE, col_types = NULL, na = "0", skip = 0)
+
+supermarket_3 <- as.data.frame(lapply(supermarket, as.numeric))
+#View(supermarket)
+d <- supermarket_3
+n <- ncol(d)
+
+df <- splitstackshape::cSplit(d, 1:n, sep = " ", "wide")
+#View(df)
+# Remove column 
+test.df <- as.data.frame(df)
+colnames(test.df)[seq(1,ncol(test.df),3)] <- c("Category")
+colnames(test.df)[seq(2,ncol(test.df),3)] <- c("Scantime")
+colnames(test.df)[seq(3,ncol(test.df),3)] <- c("Price")
+
+#view(test.df)
+
+times <- df %>% select(seq(2, length(df), 3))
+test.df <- cbind(test.df, totalTime = rowSums(times, na.rm = TRUE))
+
+departments <- df %>% select(seq(1, length(df), 3))
+test.df <- cbind(test.df, totalItems = 74 - rowSums(is.na(departments)))
+
+prices <- df %>% select(seq(3, length(df), 3))
+test.df <- cbind(test.df, totalPrice = rowSums(prices, na.rm = TRUE))
+
+test.df <- cbind(test.df, AvgTime = test.df$totalTime / test.df$totalItems)
+test.df <- cbind(test.df, AvgPrice = test.df$totalPrice / test.df$totalItems)
+
+test.df <- cbind(test.df, BakeryPastry = rowSums(departments == "1", na.rm = TRUE))
+test.df <- cbind(test.df, BeerWine = rowSums(departments == "2", na.rm = TRUE))
+test.df <- cbind(test.df, BooksMagazines = rowSums(departments == "3", na.rm = TRUE))
+test.df <- cbind(test.df, CandyChips = rowSums(departments == "4", na.rm = TRUE))
+test.df <- cbind(test.df, CareHygiene = rowSums(departments == "5", na.rm = TRUE))
+test.df <- cbind(test.df, CerealsSpreads = rowSums(departments == "6", na.rm = TRUE))
+test.df <- cbind(test.df, CheeseTapas = rowSums(departments == "7", na.rm = TRUE))
+test.df <- cbind(test.df, DairyEggs = rowSums(departments == "8", na.rm = TRUE))
+test.df <- cbind(test.df, Freezer = rowSums(departments == "9", na.rm = TRUE))
+test.df <- cbind(test.df, FruitVegetables = rowSums(departments == "10", na.rm = TRUE))
+test.df <- cbind(test.df, HouseholdPet = rowSums(departments == "11", na.rm = TRUE))
+test.df <- cbind(test.df, MeatFish = rowSums(departments == "12", na.rm = TRUE))
+test.df <- cbind(test.df, PastaRice = rowSums(departments == "13", na.rm = TRUE))
+test.df <- cbind(test.df, SaladsMeals = rowSums(departments == "14", na.rm = TRUE))
+test.df <- cbind(test.df, SaucesSpices = rowSums(departments == "15", na.rm = TRUE))
+test.df <- cbind(test.df, SodaJuices = rowSums(departments == "16", na.rm = TRUE))
+test.df <- cbind(test.df, SpecialDiet = rowSums(departments == "17", na.rm = TRUE))
+test.df <- cbind(test.df, VegetarianVegan = rowSums(departments == "18", na.rm = TRUE))
+
+
+#departments$BakeryPastry <- rowSums(departments == "9")
+#test.df$BeerWine <- rowSums(test.df == "2")
+
+#departments <- cbind(test.df, Bakery_Pastry = rowSums(departments == "9", na.rm = TRUE))
+
+
+test.df <- tibble::rowid_to_column(test.df, "Customer")
+
+
+
+#View(departments)
+
+
+
+
+
+#data_frame_mod <- test.df[which(test.df$Customer %in% c("93","171","263","676","766","852","863","873","975","986")),]
+#View(data_frame_mod)
+
+
+
+```
+
+
+``` {r}
+
+
+customers <- read_excel("C:/Users/johan/Downloads/pilot_1-1.xlsx", col_names = FALSE, col_types = NULL, na = "0", skip = 0)
+customers <- as.data.frame(lapply(customers, as.numeric))
+
+
+#customers <- cbind(test.df, Fraud = rowSums(customers$...2 == c("93","171","263","676","766","852","863","873","975","986"), na.rm = TRUE))
+
+
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+cldata <- test.df %>% select("AvgTime", "AvgPrice","totalItems", "BakeryPastry":"VegetarianVegan")
+#View(test.df$AvgTime)
+
+
+norm_minmax <- function(x){
+                           (x- min(x)) /(max(x)-min(x))
+                          }
+normal <- as.data.frame(lapply(cldata, norm_minmax))
+
+set.seed(123)
+
+fviz_nbclust(normal, kmeans, method = "wss",   k.max = 30,)
+
+#gap_stat <- clusGap(normal, FUN = kmeans, nstart = 25,
+                   #K.max = 20, B = 50)
+
+#fviz_gap_stat(gap_stat)
+
+
+```
+
+
+```{r}
+set.seed(123)
+final <- kmeans(normal, 24, nstart = 25, algorithm = "Lloyd")
+print(final)
+
+cluster_info <- broom::tidy(final)
+
+point_assignments <- broom::augment(final, normal) 
+
+model_stats <- broom::glance(final)
+
+model_stats
+
+
+```
+
+
+```{r}
+
+fviz_cluster(final, data = normal, geom = c("text"))
+
+#fviz_cluster(final, data = normal, axes = c(2,3))
+point_assignments
+ggplot2::ggplot() +
+  ggplot2::geom_point(
+    data = point_assignments, aes(x =.cluster   , y =  AvgTime, color = .cluster)
+  ) + 
+  ggplot2::geom_point(
+    data = cluster_info, aes(x = cluster  , y =  AvgTime), size = 4, shape = "x"
+  ) +
+  ggplot2::labs(
+    title = "k-Means analysis of customers",
+    x = " cluster",
+    y = "Average Time"
+  )
+
+#p <- ggplot(cluster_info, aes(factor(cluster), AvgPrice))
+
+ggplot(cluster_info, aes(cluster, size, colour = AvgPrice)) + 
+  geom_point()
+```
+```{r}
+#install.packages("fmsb")
+library(fmsb)
+clinfo <- cluster_info %>% select(BakeryPastry:VegetarianVegan)
+clinfo1 <- clinfo[c(1:3),]
+clinfo2 <- clinfo[c(4:6),]
+clinfo3 <- clinfo[c(7:9),]
+clinfo4 <- clinfo[c(10:12),]
+clinfo5 <- clinfo[c(13:15),]
+clinfo6 <- clinfo[c(16:18),]
+clinfo7 <- clinfo[c(19:21),]
+clinfo8 <- clinfo[c(22:24),]
+
+```
+
+```{r}
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo1,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 4:6,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 1:3),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo2,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 1:3,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 4:6),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo3,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 7:9,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 7:9),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo4,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 10:12,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 10:12),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo5,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 13:15,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 13:15),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo6,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 16:18,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 16:18),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo7,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 19:21,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 19:21),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+##
+
+areas <- c(rgb(1, 0, 0, 0.25),
+           rgb(0, 1, 0, 0.25),
+           rgb(0, 0, 1, 0.25))
+
+radarchart(clinfo8,
+           cglty = 1,       # Grid line type
+           cglcol = "gray", # Grid line color
+           pcol = 22:24,      # Color for each line
+           plwd = 1,        # Width for each line
+           plty = 2,
+           pfcol = areas,
+           maxmin = FALSE)   
+legend("topright",
+       legend = paste("cluster", 22:24),
+       bty = "n", pch = 20, col = areas,
+       text.col = "grey25", pt.cex = 2)
+```
+

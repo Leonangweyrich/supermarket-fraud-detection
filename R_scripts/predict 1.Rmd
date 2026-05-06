@@ -1,0 +1,274 @@
+---
+title: "pilot testing"
+author: "leon"
+date: "5/2/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(dplyr)
+library("splitstackshape")
+library(readxl)
+
+library(tidyverse)  
+library(cluster)    
+library(factoextra)
+library(ggplot2)
+library(ranger)
+library(caret)
+library(data.table)
+#install.packages("ranger")
+#install.packages("caTools")
+library(caTools)
+
+```
+
+
+#Pilot 1
+``` {r}
+
+
+supermarket_3 <- read_excel("~/Downloads/supermarket_3.xlsx", col_names = FALSE, col_types = NULL, na = "0", skip = 0)
+
+
+supermarket_3 <- as.data.frame(lapply(supermarket_3, as.numeric))
+#View(supermarket)
+d <- supermarket_3
+n <- ncol(d)
+
+df <- splitstackshape::cSplit(d, 1:n, sep = " ", "wide")
+
+test.df <- as.data.frame(df)
+colnames(test.df)[seq(1,ncol(test.df),3)] <- c("Category")
+colnames(test.df)[seq(2,ncol(test.df),3)] <- c("Scantime")
+colnames(test.df)[seq(3,ncol(test.df),3)] <- c("Price")
+
+#view(test.df)
+
+times <- df %>% select(seq(2, length(df), 3))
+test.df <- cbind(test.df, totalTime = rowSums(times, na.rm = TRUE))
+
+departments <- df %>% select(seq(1, length(df), 3))
+test.df <- cbind(test.df, totalItems = 74 - rowSums(is.na(departments)))
+
+prices <- df %>% select(seq(3, length(df), 3))
+test.df <- cbind(test.df, totalPrice = rowSums(prices, na.rm = TRUE))
+
+test.df <- cbind(test.df, AvgTime = test.df$totalTime / test.df$totalItems)
+test.df <- cbind(test.df, AvgPrice = test.df$totalPrice / test.df$totalItems)
+
+
+test.df <- cbind(test.df, BakeryPastry = rowSums(departments == "1", na.rm = TRUE))
+test.df <- cbind(test.df, BeerWine = rowSums(departments == "2", na.rm = TRUE))
+test.df <- cbind(test.df, BooksMagazines = rowSums(departments == "3", na.rm = TRUE))
+test.df <- cbind(test.df, CandyChips = rowSums(departments == "4", na.rm = TRUE))
+test.df <- cbind(test.df, CareHygiene = rowSums(departments == "5", na.rm = TRUE))
+test.df <- cbind(test.df, CerealsSpreads = rowSums(departments == "6", na.rm = TRUE))
+test.df <- cbind(test.df, CheeseTapas = rowSums(departments == "7", na.rm = TRUE))
+test.df <- cbind(test.df, DairyEggs = rowSums(departments == "8", na.rm = TRUE))
+test.df <- cbind(test.df, Freezer = rowSums(departments == "9", na.rm = TRUE))
+test.df <- cbind(test.df, FruitVegetables = rowSums(departments == "10", na.rm = TRUE))
+test.df <- cbind(test.df, HouseholdPet = rowSums(departments == "11", na.rm = TRUE))
+test.df <- cbind(test.df, MeatFish = rowSums(departments == "12", na.rm = TRUE))
+test.df <- cbind(test.df, PastaRice = rowSums(departments == "13", na.rm = TRUE))
+test.df <- cbind(test.df, SaladsMeals = rowSums(departments == "14", na.rm = TRUE))
+test.df <- cbind(test.df, SaucesSpices = rowSums(departments == "15", na.rm = TRUE))
+test.df <- cbind(test.df, SodaJuices = rowSums(departments == "16", na.rm = TRUE))
+test.df <- cbind(test.df, SpecialDiet = rowSums(departments == "17", na.rm = TRUE))
+test.df <- cbind(test.df, VegetarianVegan = rowSums(departments == "18", na.rm = TRUE))
+
+prices <- df %>% select(seq(3, length(df), 3))
+
+
+#departments$BakeryPastry <- rowSums(departments == "9")
+#test.df$BeerWine <- rowSums(test.df == "2")
+
+#departments <- cbind(test.df, Bakery_Pastry = rowSums(departments == "9", na.rm = TRUE))
+
+
+test.df <- tibble::rowid_to_column(test.df, "Customer")
+
+```
+
+
+``` {r}
+
+newdata <- test.df %>% slice(3,13,33,51,55,61,93,97,126,131,133,162,171,177,178,182,189,193,217,254,263,265,272,279,311,316,32,326,334,351,354,356,378,383,384,385,388,394,398,402,42,422,433,442,467,474,497,505,525,537,555,565,582,585,588,612,624,635,652,653,663,673,676,679,692,696,702,705,718,724,726,731,742,763,765,766,768,775,78,786,787,792,793,795,813,814,818,848,85,852,863,873,89,896,9,928,935,968,986,1)
+
+time <- newdata %>% select(seq(3, 198, 3))
+price <- newdata %>% select(seq(4, 199, 3))
+
+newdata <-newdata %>%
+  mutate(Class = 0)
+
+
+
+newdata[7, 247] = 1
+newdata[13, 247] = 1
+newdata[21, 247] = 1
+newdata[63, 247] = 1
+newdata[76, 247] = 1
+newdata[90, 247] = 1
+newdata[91, 247] = 1
+newdata[92, 247] = 1
+newdata[97, 247] = 1
+newdata[99, 247] = 1
+
+
+
+
+
+
+
+```
+
+
+
+
+############
+
+#Pilot 2
+``` {r}
+
+supermarket_2 <- read_excel("~/Downloads/supermarket_2.xlsx", col_names = FALSE, col_types = NULL, na = "0", skip = 0)
+
+
+supermarket_2 <- as.data.frame(lapply(supermarket_2, as.numeric))
+#View(supermarket)
+d <- supermarket_2
+n <- ncol(d)
+
+df <- splitstackshape::cSplit(d, 1:n, sep = " ", "wide")
+
+test.df2 <- as.data.frame(df)
+colnames(test.df2)[seq(1,ncol(test.df2),3)] <- c("Category")
+colnames(test.df2)[seq(2,ncol(test.df2),3)] <- c("Scantime")
+colnames(test.df2)[seq(3,ncol(test.df2),3)] <- c("Price")
+
+#view(test.df)
+
+times <- df %>% select(seq(2, length(df), 3))
+test.df2 <- cbind(test.df2, totalTime = rowSums(times, na.rm = TRUE))
+
+departments <- df %>% select(seq(1, length(df), 3))
+test.df2 <- cbind(test.df2, totalItems = 66 - rowSums(is.na(departments)))
+
+prices <- df %>% select(seq(3, length(df), 3))
+test.df2 <- cbind(test.df2, totalPrice = rowSums(prices, na.rm = TRUE))
+
+test.df2 <- cbind(test.df2, AvgTime = test.df2$totalTime / test.df2$totalItems)
+test.df2 <- cbind(test.df2, AvgPrice = test.df2$totalPrice / test.df2$totalItems)
+
+
+test.df2 <- cbind(test.df2, BakeryPastry = rowSums(departments == "1", na.rm = TRUE))
+test.df2 <- cbind(test.df2, BeerWine = rowSums(departments == "2", na.rm = TRUE))
+test.df2 <- cbind(test.df2, BooksMagazines = rowSums(departments == "3", na.rm = TRUE))
+test.df2 <- cbind(test.df2, CandyChips = rowSums(departments == "4", na.rm = TRUE))
+test.df2 <- cbind(test.df2, CareHygiene = rowSums(departments == "5", na.rm = TRUE))
+test.df2 <- cbind(test.df2, CerealsSpreads = rowSums(departments == "6", na.rm = TRUE))
+test.df2 <- cbind(test.df2, CheeseTapas = rowSums(departments == "7", na.rm = TRUE))
+test.df2 <- cbind(test.df2, DairyEggs = rowSums(departments == "8", na.rm = TRUE))
+test.df2 <- cbind(test.df2, Freezer = rowSums(departments == "9", na.rm = TRUE))
+test.df2 <- cbind(test.df2, FruitVegetables = rowSums(departments == "10", na.rm = TRUE))
+test.df2 <- cbind(test.df2, HouseholdPet = rowSums(departments == "11", na.rm = TRUE))
+test.df2 <- cbind(test.df2, MeatFish = rowSums(departments == "12", na.rm = TRUE))
+test.df2 <- cbind(test.df2, PastaRice = rowSums(departments == "13", na.rm = TRUE))
+test.df2 <- cbind(test.df2, SaladsMeals = rowSums(departments == "14", na.rm = TRUE))
+test.df2 <- cbind(test.df2, SaucesSpices = rowSums(departments == "15", na.rm = TRUE))
+test.df2 <- cbind(test.df2, SodaJuices = rowSums(departments == "16", na.rm = TRUE))
+test.df2 <- cbind(test.df2, SpecialDiet = rowSums(departments == "17", na.rm = TRUE))
+test.df2 <- cbind(test.df2, VegetarianVegan = rowSums(departments == "18", na.rm = TRUE))
+
+prices <- df %>% select(seq(3, length(df), 3))
+
+
+#departments$BakeryPastry <- rowSums(departments == "9")
+#test.df$BeerWine <- rowSums(test.df == "2")
+
+#departments <- cbind(test.df, Bakery_Pastry = rowSums(departments == "9", na.rm = TRUE))
+
+
+test.df2 <- tibble::rowid_to_column(test.df2, "Customer")
+
+```
+
+``` {r}
+
+newdata2 <- test.df2 %>% slice(354,61,931,948,46,294,847,181,199,929,995,593,238,730,265,522,387,279,344,475,159,480,381,377,527,918,243,919,103,956,732,760,392,972,459,36,189,832,711,977,6,693,736,319,517,682,672,429,142,781,639,407,681,752,967,436,486,257,183,93,585,173,830,926,161,549,412,615,300 ,568, 927, 197, 705, 664, 845 ,508 ,298, 576 ,232, 273, 471, 269 ,107, 825, 325, 610, 985, 709, 599, 521, 474, 82, 458, 44, 792, 89 ,258, 455, 310, 378)
+
+time <- newdata2 %>% select(seq(3, 198, 3))
+price <- newdata2 %>% select(seq(4, 199, 3))
+
+newdata2 <-newdata2 %>%
+  mutate(Class = 0)
+
+#View(newdata2)
+#View(newdata)
+
+#data_frame_mod <- test.df[which(test.df$Customer %in% c("61", "294", "181", "760", "736", "173", "161", "705","232", "599","89", "6")),]
+
+
+newdata2[41, 223] = 1
+newdata2[2, 223] = 1
+newdata2[96, 223] = 1
+newdata2[65, 223] = 1
+newdata2[62, 223] = 1
+newdata2[8, 223] = 1
+newdata2[79, 223] = 1
+newdata2[6, 223] = 1
+newdata2[89, 223] = 1
+newdata2[73, 223] = 1
+newdata2[43, 223] = 1
+newdata2[32, 223] = 1
+
+
+
+view(newdata)
+
+newdata3 <- newdata %>% select(AvgTime:Class)
+newdata4 <- newdata2 %>% select(AvgTime:Class)
+
+
+total <- rbind(newdata3,newdata4)
+
+
+```   
+
+
+``` {r}
+
+set.seed(123)
+data_sample = sample.split(total$Class,SplitRatio=0.60)
+train_data = subset(total,data_sample==TRUE)
+test_data = subset(total,data_sample==FALSE)
+dim(train_data)
+dim(test_data)
+
+```
+``` {r}
+
+Logistic_Model=glm(Class~.,train_data,family=binomial())
+summary(Logistic_Model)
+plot(Logistic_Model)
+
+```
+
+
+``` {r}
+
+library(pROC)
+
+lr.predict <- predict(Logistic_Model,test_data, probability = TRUE)
+auc.gbm = roc(test_data$Class, lr.predict, plot = TRUE, col = "blue")
+
+sum(lr.predict > 0)
+str(test_data$Class)
+str(lr.predict)
+
+sum(test_data$Class == 1)
+View(test_data)
+p425 <- lr.predict[which(lr.predict>=0)]
+
+```
